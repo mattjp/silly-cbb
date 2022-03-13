@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Specification template describing your function.
+Resources:
+  cbbSimulate:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handler.lambda_handler
+      Runtime: python3.9
+      CodeUri: .
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      Role: 'arn:aws:iam::144022472803:role/service-role/cbbSimulate-role-8hma3g3s'
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /simulate
+            Method: GET
