@@ -1,4 +1,5 @@
 import boto3
+from decimal import Decimal
 import requests
 import json
 import time
@@ -101,11 +102,33 @@ def add_all_guard_data_to_s3(teams):
 			content_obj = s3.Object('silly-cbb', f"players/2021/guards/{guard['sport_radar_id']}")
 			content_obj.put(Body=json.dumps(json_content))
 			time.sleep(2) # API rate limit is 1 req/sec
-		
 
 
+def add_team_stats_to_table(team_stats_json):
+	dyanmodb = boto3.resource('dynamodb', region_name='us-east-2')
+	table = dyanmodb.Table(DDB_TABLE_NAME)
 
+	total_stats = team_stats_json['own_record']['total']
+	avg_stats = team_stats_json['own_record']['average']
 
+	tot_ft_pct = total_stats['free_throws_pct']
+	off_rbd_avg = avg_stats['off_rebounds']
+	ft_att_avg = avg_stats['free_throws_att']
+
+	print(tot_ft_pct, off_rbd_avg, ft_att_avg)
+
+	table.update_item(
+		Key={
+			'school_name': team['school_name']
+		},
+		UpdateExpression='set season_ft_pct = :ftp, off_rebound_avg_pg = :ora, ft_att_avg_pg = :faa',
+		ExpressionAttributeValues={
+			':ftp': Decimal(str(tot_ft_pct)),
+			':ora': Decimal(str(off_rbd_avg)),
+			':faa': Decimal(str(ft_att_avg))
+		},
+		ReturnValues='UPDATED_NEW'
+	)
 
 
 if __name__ == '__main__':
@@ -113,9 +136,10 @@ if __name__ == '__main__':
 	# add_team_stats_to_s3(all_teams)
 	for team in all_teams:
 		print(team['school_name'])
-		tsj = get_team_stats_from_s3(team['school_name'])
-		starting_guards = get_starting_guards(tsj)
-		add_guard_data_to_table(starting_guards, team)
+		team_stats_json = get_team_stats_from_s3(team['school_name'])
+		add_team_stats_to_table(team_stats_json)
+		# starting_guards = get_starting_guards(tsj)
+		# add_guard_data_to_table(starting_guards, team)
 		# break
 	# add_all_guard_data_to_s3(all_teams)
 	# add_guard_exp_to_table(all_teams)
