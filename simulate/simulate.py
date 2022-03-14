@@ -10,9 +10,9 @@ ITEM = 'Item'
 GUARD_AGE_SCORE = {
   'FR': 0.1,
   'SO': 0.2,
-  'JR': 0.5,
-  'SR': 0.6,
-  'GR': 0.7
+  'JR': 0.3,
+  'SR': 0.4,
+  'GR': 0.5
 }
 
 def lambda_handler(event, context):
@@ -58,7 +58,7 @@ def validate_input(event):
     return False
 
   query_teams = params[TEAMS]
-  teams = query_teams.split(',', 1)
+  teams = query_teams.split(',')
   if len(teams) != 2:
     return False
 

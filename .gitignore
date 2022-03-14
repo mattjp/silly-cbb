@@ -128,5 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# AWS
+# AWS SAM
 .aws-sam/
+samconfig.toml

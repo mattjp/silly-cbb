@@ -29,11 +29,6 @@ raw standings located at: `s3://silly-cbb/standings_2021.json`
 
 * organize operations by what s3 component they're working with
 
-"""
-FR – Freshman
-SO – Sophomore
-JR – Junior
-SR – Senior
-GR – Graduate Student
-"""
+
+https://gq2gtmama0.execute-api.us-east-2.amazonaws.com/Prod/simulate
 
