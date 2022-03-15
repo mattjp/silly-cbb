@@ -7,12 +7,23 @@ DDB_TABLE_NAME = 'cbb_d1_teams_2021'
 QSP = 'queryStringParameters'
 TEAMS = 'teams'
 ITEM = 'Item'
+MIN_OFF_RBD = Decimal(3.97) # Static, pulled from DynamoDB
+MAX_OFF_RBD = Decimal(13.5)
+POWER_SIX = {
+  'ACC':     1.05,
+  'BIG12':   1.075,
+  'BIGEAST': 1.05,
+  'BIG10':   1.05,
+  'PAC12':   1.05,
+  'SEC':     1.025
+
+}
 GUARD_AGE_SCORE = {
-  'FR': 0.1,
-  'SO': 0.2,
-  'JR': 0.3,
-  'SR': 0.4,
-  'GR': 0.5
+  'FR': 0.0,
+  'SO': 0.1,
+  'JR': 0.15,
+  'SR': 0.2,
+  'GR': 0.2
 }
 
 def lambda_handler(event, context):
@@ -66,15 +77,18 @@ def validate_input(event):
 
 
 def score(stats):
-  ft_pct = round(stats['season_ft_pct'], 2)
-  avg_guard_age = round(Decimal(sum(list(map(lambda g: GUARD_AGE_SCORE[g['experience']], stats['guards']))) / 2), 2)
-  avg_off_rebound = round(stats['off_rebound_avg_pg'], 2)
+  conf = stats['conference']
+  ft_pct = round(stats['season_ft_pct'], 4)
+  avg_guard_age = round(Decimal(sum(list(map(lambda g: GUARD_AGE_SCORE[g['experience']], stats['guards']))) / 2), 4)
+  avg_off_rebound = round((round(stats['off_rebound_avg_pg'], 4) - MIN_OFF_RBD) / (MAX_OFF_RBD - MIN_OFF_RBD), 4) # Normalize
+  conf_bonus = POWER_SIX[conf] if conf in POWER_SIX else 1
 
-  score = ft_pct + avg_guard_age + round((avg_off_rebound / 100), 2)
+  score = (ft_pct + avg_guard_age + round((avg_off_rebound / 2), 4) ) * Decimal(conf_bonus)
 
   return {
     'season_ft_pct': float(ft_pct), # str()
     'avg_guard_age': float(avg_guard_age),
     'avg_off_rebound': float(avg_off_rebound),
+    'conf_bonus': float(conf_bonus),
     'score': float(score)
   }

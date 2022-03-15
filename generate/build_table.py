@@ -2,12 +2,6 @@ import boto3
 import json
 import re
 
-"""
-1. read in json file from s3
-2. build list of D1 conference teams
-3. build dynamodb table using list
-"""
-
 DDB_TABLE_NAME = 'cbb_d1_teams_2021'
 S3_BUCKET = 'silly-cbb' 
 S3_KEY = 'standings_2021.json' # these 3 things should all be CLI args - pass in DDB table name + S3 URI

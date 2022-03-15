@@ -133,11 +133,13 @@ def add_team_stats_to_table(team_stats_json):
 
 if __name__ == '__main__':
 	all_teams = get_all_teams()
+	off_rbd = list(map(lambda x: x['off_rebound_avg_pg'], all_teams))
+	print(f'min: {min(off_rbd)}, max: {max(off_rbd)}')
 	# add_team_stats_to_s3(all_teams)
-	for team in all_teams:
-		print(team['school_name'])
-		team_stats_json = get_team_stats_from_s3(team['school_name'])
-		add_team_stats_to_table(team_stats_json)
+	# for team in all_teams:
+		# print(team['school_name'])
+		# team_stats_json = get_team_stats_from_s3(team['school_name'])
+		# add_team_stats_to_table(team_stats_json)
 		# starting_guards = get_starting_guards(tsj)
 		# add_guard_data_to_table(starting_guards, team)
 		# break
