@@ -20,10 +20,10 @@ POWER_SIX = {
 }
 GUARD_AGE_SCORE = {
   'FR': 0.0,
-  'SO': 0.1,
-  'JR': 0.15,
-  'SR': 0.2,
-  'GR': 0.2
+  'SO': 0.2,
+  'JR': 0.7,
+  'SR': 0.9,
+  'GR': 1.0
 }
 
 def lambda_handler(event, context):
@@ -81,14 +81,21 @@ def score(stats):
   ft_pct = round(stats['season_ft_pct'], 4)
   avg_guard_age = round(Decimal(sum(list(map(lambda g: GUARD_AGE_SCORE[g['experience']], stats['guards']))) / 2), 4)
   avg_off_rebound = round((round(stats['off_rebound_avg_pg'], 4) - MIN_OFF_RBD) / (MAX_OFF_RBD - MIN_OFF_RBD), 4) # Normalize
-  conf_bonus = POWER_SIX[conf] if conf in POWER_SIX else 1
+  conf_bonus = Decimal(POWER_SIX[conf]) if conf in POWER_SIX else Decimal(1)
 
-  score = (ft_pct + avg_guard_age + round((avg_off_rebound / 2), 4) ) * Decimal(conf_bonus)
+  A = Decimal(0.8)
+  B = Decimal(0.2)
+  C = Decimal(0.01)
+
+  score = ((A * ft_pct) + (B * avg_guard_age) + (C * avg_off_rebound)) * conf_bonus
+
+  # score = (ft_pct + avg_guard_age + round((avg_off_rebound / 2), 4) ) * Decimal(conf_bonus)
+  # (0.6*ft_pct + 0.3*avg_guard_age + 0.1*off_rbd) * conf_bonus
 
   return {
-    'season_ft_pct': float(ft_pct), # str()
-    'avg_guard_age': float(avg_guard_age),
-    'avg_off_rebound': float(avg_off_rebound),
+    'season_ft_pct': float(A * ft_pct), # str()
+    'avg_guard_age': float(B * avg_guard_age),
+    'avg_off_rebound': float(C * avg_off_rebound),
     'conf_bonus': float(conf_bonus),
     'score': float(score)
   }
