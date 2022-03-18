@@ -7,8 +7,6 @@ DDB_TABLE_NAME = 'cbb_d1_teams_2021'
 QSP = 'queryStringParameters'
 TEAMS = 'teams'
 ITEM = 'Item'
-MIN_OFF_RBD = Decimal(3.97) # Static, pulled from DynamoDB
-MAX_OFF_RBD = Decimal(13.5)
 POWER_SIX = {
   'ACC':     1.05,
   'BIG12':   1.075,
@@ -19,12 +17,20 @@ POWER_SIX = {
 
 }
 GUARD_AGE_SCORE = {
-  'FR': 0.0,
-  'SO': 0.2,
-  'JR': 0.7,
-  'SR': 0.9,
-  'GR': 1.0
+  'FR': 1.0,
+  'SO': 1.0,
+  'JR': 1.025,
+  'SR': 1.05,
+  'GR': 1.05
 }
+
+# Static, pulled from DynamoDB
+MIN_OFF_RBD = Decimal(3.97) 
+MAX_OFF_RBD = Decimal(13.5)
+MIN_FT_PCT  = Decimal(0.6)
+MAX_FT_PCT  = Decimal(0.825)
+MIN_FT_ATT  = Decimal(11.78)
+MAX_FT_ATT  = Decimal(23.43)
 
 def lambda_handler(event, context):
 
@@ -78,24 +84,32 @@ def validate_input(event):
 
 def score(stats):
   conf = stats['conference']
-  ft_pct = round(stats['season_ft_pct'], 4)
-  avg_guard_age = round(Decimal(sum(list(map(lambda g: GUARD_AGE_SCORE[g['experience']], stats['guards']))) / 2), 4)
-  avg_off_rebound = round((round(stats['off_rebound_avg_pg'], 4) - MIN_OFF_RBD) / (MAX_OFF_RBD - MIN_OFF_RBD), 4) # Normalize
+  ft_pct = stats['season_ft_pct']
+  off_rbd_avg = stats['off_rebound_avg_pg']
+
+  # Normalized statistics, range 0-1
+  norm_ft_pct = (ft_pct - MIN_FT_PCT) / (MAX_FT_PCT - MIN_FT_PCT)
+  norm_avg_off_rbd = (off_rbd_avg - MIN_OFF_RBD) / (MAX_OFF_RBD - MIN_OFF_RBD)
+  
+  # Bonus multipliers, between 0-5%
+  avg_guard_age = Decimal(sum(list(map(lambda g: GUARD_AGE_SCORE[g['experience']], stats['guards']))) / 2)
   conf_bonus = Decimal(POWER_SIX[conf]) if conf in POWER_SIX else Decimal(1)
+
+  # A = Decimal(0.8)
+  # B = Decimal(0.2)
+  # C = Decimal(0.01)
 
   A = Decimal(0.8)
   B = Decimal(0.2)
-  C = Decimal(0.01)
 
-  score = ((A * ft_pct) + (B * avg_guard_age) + (C * avg_off_rebound)) * conf_bonus
-
-  # score = (ft_pct + avg_guard_age + round((avg_off_rebound / 2), 4) ) * Decimal(conf_bonus)
-  # (0.6*ft_pct + 0.3*avg_guard_age + 0.1*off_rbd) * conf_bonus
+  score = (((A * norm_ft_pct) + (B * norm_avg_off_rbd)) * avg_guard_age) * conf_bonus
+  # score = ((A * ft_pct) + (B * avg_guard_age) + (C * avg_off_rebound)) * conf_bonus # V2
+  # score = (ft_pct + avg_guard_age + round((avg_off_rebound / 2), 4) ) * Decimal(conf_bonus) # V1
 
   return {
-    'season_ft_pct': float(A * ft_pct), # str()
-    'avg_guard_age': float(B * avg_guard_age),
-    'avg_off_rebound': float(C * avg_off_rebound),
+    'season_ft_pct': float(norm_ft_pct),
+    'avg_guard_age': float(avg_guard_age),
+    'avg_off_rebound': float(norm_avg_off_rbd),
     'conf_bonus': float(conf_bonus),
     'score': float(score)
   }
