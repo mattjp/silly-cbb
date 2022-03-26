@@ -2,6 +2,19 @@
 
 Picking CBB winners using only free throw percentage, starting guard age, and offensive rebounds.
 
+## Building and deploying
+
+0. Run all `generate/*.py` as normal, using Python 3.
+1. Build the calculation Lambda by running:
+  ```
+  sam build -t cbbSimulate.yaml
+  ```
+2. Run the calculation Lambda by running:
+  ```
+  sam local invoke cbbSimulate -e event.json
+  ```
+3. Deploy a new revision by pushing code to the `origin/main` branch. This is done using Github Actions and AWS SAM.
+
 ## Add all team data to S3
 
 Data comes from the Sportradar API. Trial accounts are free, and allow 1,000 requests per month. We'll use three endpoints to gather all of the requisite data, storing it in S3.
@@ -84,10 +97,8 @@ Sample response:
 }
 ```
 
-## Autocomplete Lambda
+## Todo
 
-Todo: prefix search the dynamodb using a lambda.
+* Use ML, I think me manually tuning the coefficients is just manual machine learning
 
-
-
-
+* prefix search the dynamodb using a lambda.
